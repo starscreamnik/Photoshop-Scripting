@@ -31,7 +31,10 @@ function isSelected(selection){
 
 function exportSelectionToJson(){
 	// Turn the selection into a work path and give it ref
-	if (isSelected(doc.selection) == false) return false;
+	if (isSelected(doc.selection) == false) {
+        alert("This selection is empty")
+        return false;
+    }
 
 	doc.selection.makeWorkPath(0.1); 	// set tolerance (in PIXELS). 0 for sharp corners
 	var wPath = doc.pathItems['Рабочий контур'];

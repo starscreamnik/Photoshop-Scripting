@@ -44,19 +44,24 @@ function updateCenterXY(bounds, currPoint){
 	return bounds;
 }
 
-function sendGroupById(id){
+function sendGroupById(id, currGroup){
     doc.activeLayer = doc.artLayers.getByName(id);
-    createFolder("~/Desktop/" + doc.name + "/g" + id);
 
     selectLayerPixels();
+    if (isSelected(doc.selection) == false) {
+        alert("This selection is empty")
+        return false;
+    }
+
+    createFolder("~/Desktop/" + doc.name + "/g" + currGroup);
 
     doc.selection.makeWorkPath(0.1); 	// set tolerance (in PIXELS). 0 for sharp corners
     var wPath = doc.pathItems['Рабочий контур'];
     var subPaths = wPath.subPathItems;
     var isAdded = false;
 
-    for (i=0; i<subPaths.length; i++){	// 0 - n-1
-        var jsonFile = new File("~/Desktop/" + doc.name + "/g"+ id + "/" + (i+1) + ".json");
+    for (var i=0; i<subPaths.length; i++){	// 0 - n-1
+        var jsonFile = new File("~/Desktop/" + doc.name + "/g"+ currGroup + "/" + (i+1) + ".json");
         jsonFile.open("w");
 
         var bounds = {minX : 10000, minY : 10000, maxX : 0, maxY : 0};
@@ -68,7 +73,7 @@ function sendGroupById(id){
                 coords.push(currPoint[0])
                 coords.push(currPoint[1])
                 bounds = updateCenterXY(bounds, currPoint);
-                isAdded = isAdded? true : addGroupColor(currPoint);
+                isAdded = isAdded? true : findGroupColor(currPoint);
             }
         }
         var json = '{"coords" : [' + coords.join(",") + '], ' +
@@ -80,7 +85,12 @@ function sendGroupById(id){
     layers.push(subPaths.length)
  
     wPath.remove();
-	return 1;
+	return true;
+}
+
+function isSelected(selection){
+    try      { return (selection.bounds) ? true : false; }
+    catch(e) { return false; }
 }
 
 function componentToHex(c) {
@@ -92,19 +102,40 @@ function rgbToHex(r, g, b) {
     return componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
   
-function addGroupColor(currPoint){
-    var pSample = doc.colorSamplers.add([(currPoint[0]-1), (currPoint[1])-1]);
-    var rgb = [
-        pSample.color.rgb.red,
-        pSample.color.rgb.green,
-        pSample.color.rgb.blue,
+function getRGB(point){
+    return [
+        point.color.rgb.red,
+        point.color.rgb.green,
+        point.color.rgb.blue,
     ];
-    doc.colorSamplers.removeAll(); 
+}
 
-    if((rgb[0]+rgb[1]+rgb[2])/3 > 220) return false;
+function findGroupColor(currPoint){
+    var done1 = done2 = false;
+    for (var i = 3; i>-3; i--){
+        var dxPoint = doc.colorSamplers.add([(currPoint[0]+i), (currPoint[1])]);
+        var dyPoint = doc.colorSamplers.add([(currPoint[0]), (currPoint[1]+i)]);
+        rgb1 = getRGB(dxPoint);
+        rgb2 = getRGB(dyPoint);
+        doc.colorSamplers.removeAll();
 
-    colors.push('"' + rgbToHex(Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2])) + '"');
-    return true;
+        if ((rgb1[0] + rgb1[1] + rgb1[2])/3 < 245){
+            done1 = true;
+            break;
+        } else if ((rgb2[0] + rgb2[1] + rgb2[2])/3 < 245){
+            done2 = true;
+            break;
+        }
+    } 
+    if (done1){
+        colors.push('"' + rgbToHex(Math.round(rgb1[0]), Math.round(rgb1[1]), Math.round(rgb1[2])) + '"');
+        return true;
+    }
+    if (done2){
+        colors.push('"' + rgbToHex(Math.round(rgb2[0]), Math.round(rgb2[1]), Math.round(rgb2[2])) + '"');
+        return true;
+    }
+    else return false;
 }
 
 function saveInfoToJson(){
@@ -136,17 +167,20 @@ function exportGroupsToJson(){
 	} else alert('Lets start!');
 
 	try{
-        var counter = 0;
-        for(var i=0; i<doc.artLayers.length; i++)
+        for(var i=0; i<doc.artLayers.length-1; i++)
             doc.artLayers[i].visible = false
-        doc.artLayers.getByName("bg").visible = true;
-		for(var i=0; i<doc.artLayers.length; i++) 
-            if(doc.artLayers[i].name == i){
+        doc.artLayers.getByName("bg").visible = true
+    
+        var currGroup = 0;
+		for(var i=0; i<doc.artLayers.length; i++){
+            if(doc.artLayers[i].name == i){ // first layer's name equals "1", second - "2", etc.
                 doc.artLayers[i].visible = true;
-                counter += sendGroupById(i);
+                var isDone = sendGroupById(i, currGroup+1);
+                if (isDone) currGroup++;
                 doc.artLayers[i].visible = false;
-                groups++;
             }
+        }
+        groups = currGroup;
 	}
 	catch(error){
 		alert(error);
