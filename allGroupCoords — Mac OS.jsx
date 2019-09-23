@@ -54,7 +54,7 @@ function sendGroupById(id, currGroup){
         return false;
     }
 
-    createFolder(dirPath + doc.name + "/g" + currGroup);
+    createFolder("/Users/alexey/Documents/Illustrations/" + doc.name + "/g" + currGroup);
 
     doc.selection.makeWorkPath(0.1); 	// set tolerance (in PIXELS). 0 for sharp corners
     var wPath = doc.pathItems['Рабочий контур'];
@@ -62,7 +62,7 @@ function sendGroupById(id, currGroup){
     var isAdded = false;
 
     for (var i=0; i<subPaths.length; i++){	// 0 - n-1
-        var jsonFile = new File("~Desktop/" + doc.name + "/g" + currGroup + (i+1) + ".json");
+        var jsonFile = new File("/Users/alexey/Documents/Illustrations/" + doc.name + "/g"+ currGroup + "/" + (i+1) + ".json");
         jsonFile.open("w");
         var bounds = {minX : 10000, minY : 10000, maxX : 0, maxY : 0};
         var stride = 1; // 2 means every 2nd, 3 means every 3rd, etc. Minimum 1
@@ -180,7 +180,7 @@ function saveInfoToJson(){
                 '\n\t"centerY" : ' + Math.round(doc.height/2) + ',' +
                 '\n\t"layers"  : ' + '[' + layers.join(',') + '],' +
                 '\n\t"colors"  : ' + '[' + colors.join(',') + ']\n}';
-    var infoFile = new File(dirPath + doc.name + "/info.json")
+    var infoFile = new File("/Users/alexey/Documents/Illustrations/" + doc.name + "/info.json");
     infoFile.open("w");
     infoFile.write(json);
     infoFile.close();
@@ -190,7 +190,7 @@ function savePNG(){
     doc.artLayers.getByName("line").visible = true;
     doc.artLayers.getByName("bg").visible = false;
 
-    var saveFile = new File(dirPath + doc.name + "/main.png");
+    var saveFile = new File("/Users/alexey/Documents/Illustrations/" + doc.name + "/main.png");
     var pngSaveOptions = new PNGSaveOptions(); 
     doc.saveAs(saveFile, pngSaveOptions, true, Extension.LOWERCASE); 
 }
