@@ -25,13 +25,13 @@ function exportSelectionToJson(){
     jsonFile.open("w");
 
     alert("SubPaths:" + subPaths.length)
+    var subPathLength = subPaths.length
 
     var bounds = {minX : 10000, minY : 10000, maxX : 0, maxY : 0};
     var stride = 1; // 2 means every 2nd, 3 means every 3rd, etc. Minimum 1
     var coords = [];
     var addedPath = [];
 
-    var start = Date.now()
     var mainPath = subPaths[0].pathPoints;
     var length = mainPath.length
     for (var j=0; j<length; j++) {
@@ -47,16 +47,15 @@ function exportSelectionToJson(){
             bounds = updateCenterXY(bounds, currPoint[0], currPoint[1]);
         }
     }
-    var end = Date.now();
-    alert("Work Time: " + (end-start)/1000);
     
     var json = '{"coords" : [' + coords.join(",")+'], ' +
                 '"sourceX" : '+(bounds.minX+bounds.maxX)*0.5 + ',' +
                 '"sourceY" : '+(bounds.minY+bounds.maxY)*0.5;
 
-    if (subPaths.length > 1){
+    if (subPathLength > 1){
         json += ', "masks" :  ['
-        for (i=1; i<subPaths.length; i++){
+        for (var i=1; i<subPathLength; i++){
+
             bounds = {minX : 10000, minY : 10000, maxX : 0, maxY : 0};
             stride = 1; 
             coords = [];
