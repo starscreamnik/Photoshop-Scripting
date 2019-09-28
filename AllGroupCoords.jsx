@@ -12,6 +12,8 @@ var groups = 0;
 var centerX, centerY;
 
 var dirPath = "~/Desktop/";
+var round = Math.round;
+
 
 exportGroupsToJson();
 saveInfoToJson();
@@ -86,6 +88,8 @@ function sendGroupById(id, currGroup){
         jsonFile.write(json);     
         jsonFile.close();
     }
+
+    if (!isAdded) colors.push('"ffffff"');
     layers.push(subPaths.length)
  
     wPath.remove();
@@ -132,30 +136,33 @@ function updateCenterXY(bounds, currPoint){
 
 function findGroupColor(currPoint){
     var done1 = done2 = false;
-    for (var i = 3; i>-3; i--){
-        var dxPoint = doc.colorSamplers.add([(currPoint[0]+i), (currPoint[1])]);
-        var dyPoint = doc.colorSamplers.add([(currPoint[0]), (currPoint[1]+i)]);
-        rgb1 = getRGB(dxPoint);
-        rgb2 = getRGB(dyPoint);
+    var curr_rgb = [255, 255, 255];
+
+    for (var i = -5; i <= 5; i++){
+        var dx_point = doc.colorSamplers.add([(currPoint[0]+i), (currPoint[1])]);
+        var dy_point = doc.colorSamplers.add([(currPoint[0]), (currPoint[1]+i)]);
+        var dxdy1_point = doc.colorSamplers.add([(currPoint[0]+i), (currPoint[1]+i)]);
+        var dxdy2_point = doc.colorSamplers.add([(currPoint[0]+i), (currPoint[1]-i)]);
+
+
+        dx_rgb = getRGB(dx_point);
+        dy_rgb = getRGB(dy_point);
+        dxdy1_rgb = getRGB(dxdy1_point); 
+        dxdy2_rgb = getRGB(dxdy2_point);
         doc.colorSamplers.removeAll();
 
-        if ((rgb1[0] + rgb1[1] + rgb1[2])/3 < 245){
-            done1 = true;
-            break;
-        } else if ((rgb2[0] + rgb2[1] + rgb2[2])/3 < 245){
-            done2 = true;
-            break;
-        }
+        if (getRgbValue(dx_rgb) < getRgbValue(curr_rgb)) curr_rgb = dx_rgb;
+        if (getRgbValue(dy_rgb) < getRgbValue(curr_rgb)) curr_rgb = dy_rgb;
+        if (getRgbValue(dxdy1_rgb) < getRgbValue(curr_rgb)) curr_rgb = dxdy1_rgb;
+        if (getRgbValue(dxdy2_rgb) < getRgbValue(curr_rgb)) curr_rgb = dxdy2_rgb;
     } 
-    if (done1){
-        colors.push('"' + rgbToHex(Math.round(rgb1[0]), Math.round(rgb1[1]), Math.round(rgb1[2])) + '"');
-        return true;
+
+    if (getRgbValue(curr_rgb) > 250){
+        alert("Troubled color of the group:", curr_rgb[0], curr_rgb[1], curr_rgb[2]);
+        return false;
     }
-    if (done2){
-        colors.push('"' + rgbToHex(Math.round(rgb2[0]), Math.round(rgb2[1]), Math.round(rgb2[2])) + '"');
-        return true;
-    }
-    else return false;
+    colors.push('"' + rgbToHex(round(curr_rgb[0]), round(curr_rgb[1]), round(curr_rgb[2])) + '"');
+    return true;
 }
 
 function componentToHex(c) {
@@ -175,10 +182,14 @@ function getRGB(point){
     ];
 }
 
+function getRgbValue(rgb){
+    return (rgb[0]+rgb[1]+rgb[2]) / 3;
+}
+
 function saveInfoToJson(){
     var json = '{\n\t"groupNum": ' + groups + ',' +
-                '\n\t"centerX" : ' + Math.round(doc.width/2) + ',' +
-                '\n\t"centerY" : ' + Math.round(doc.height/2) + ',' +
+                '\n\t"centerX" : ' + round(doc.width/2) + ',' +
+                '\n\t"centerY" : ' + round(doc.height/2) + ',' +
                 '\n\t"layers"  : ' + '[' + layers.join(',') + '],' +
                 '\n\t"colors"  : ' + '[' + colors.join(',') + ']\n}';
     var infoFile = new File(dirPath + doc.name + "/info.json")
