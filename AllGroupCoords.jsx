@@ -135,7 +135,6 @@ function updateCenterXY(bounds, currPoint){
 }
 
 function findGroupColor(currPoint){
-    var done1 = done2 = false;
     var curr_rgb = [255, 255, 255];
 
     for (var i = -5; i <= 5; i++){
